@@ -2,10 +2,13 @@ var b = require('bonescript');
 
 var sysTime;
 var INITLED = "USR0";
+var STARTLED = "USR1";
 
 //var for send
 var ULTRASONIC_OUTPUT = "P8_4";			//send port
 var CUT_OFF = "P3_6";					//cut port: voltage must same as the vcc
+var PLUSE = 5;
+var timer;
 
 
 //var for receive
@@ -30,8 +33,9 @@ var START_TIME = 0;
 var RECV1_TIME = 0;
 var RECV2_TIME = 0;
 var TOTAL_STEP = 11;					//set gain 11 times
+var TIMEOUT = 20;
 
-setInterval(init, 1000);
+//setInterval(init, 1000);
 
 function init()
 {
@@ -42,6 +46,11 @@ function init()
 	//set start button
 	b.pinMode(START, b.INPUT);
 	b.attachInterrupt(START, true, b.RISING, startWork);
+	b.attachInterrupt(START, true, b.FALLING, finishWork);
+	
+	//set start led
+	b.pinMode(STARTLED, b.OUTPUT);
+    b.digitalWrite(STARTED, b.LOW);
 	
 	//init the send port and cut port
 	b.pinMode(ULTRASONIC_OUTPUT, b.OUTPUT);
@@ -71,40 +80,28 @@ function send()
 	b.digitalWrite(CUT_OFF, b.HIGH);
 	
 	int i = 0;
-	for(; i < 5; i ++)
+	for(; i < PLUSE; i ++)
 	{
 		b.digitalWrite(ULTRASONIC_OUTPUT,b.HIGH);
-		delay(8);                     					//need to be tested here!!!
+		delay(1);                     					//need to be tested here!!!
 		b.digitalWrite(ULTRASONIC_OUTPUT,b.LOW);
-		delay(9);
+		delay(1);
 	}
 	
-	b.digitalWrite(CUT_OFF, b.HIGH);
+	b.digitalWrite(CUT_OFF, b.LOW);
 }
 
-function receive()
+function receive()										//the version for short distance
 {
-	GA_NO = 0;
+	GA_NO = 0;			
 	setGain(GA_NO);
-	setInterval(timerIsr, GainTime[GA_NO]);
+	//setInterval(timerIsr, GainTime[GA_NO]);
 	
 	b.digitalWrite(INHIBIT1, b.LOW);
 	b.digitalWrite(INHIBIT2, b.LOW);
 }
 
-function timerIsr()
-{
-	GA_NO ++;
-	if(GA_NO < 11)
-	{
-		setInterval(timerIsr, GainTime[GA_NO]);
-		setGain(GA_NO);
-	}
-	else
-	{
-		clearInterval(timerIsr);
-	}
-}
+
 function startWork()
 {
 	//init vars
@@ -112,15 +109,36 @@ function startWork()
 	RECV2_TIME = 0;
 	START_TIME = new Date.getTime();
 	
+	//turn on the led
+	b.digitalWrite(STARTLED, b.HIGH);
+	
 	//enable receive
 	receive();
 	
 	//enable send
-	send();
+	timer = setInterval(send, PLUSE * 2);
 	
-	d1 = (RECV1_TIME - START_TIME) * 0.17;
-	d2 = (RECV2_TIME - START_TIME) * 0.17;
+}
+
+function finishWork()
+{
+	//init vars
+	RECV1_TIME = 0;
+	RECV2_TIME = 0;
+	START_TIME = 0;
 	
+	//turn off the receiver and sender
+	b.digitalWrite(INHIBIT1, b.HIGH);
+	b.digitalWrite(INHIBIT2, b.HIGH);
+	
+	b.digitalWrite(ULTRASONIC_OUTPUT, b.LOW);
+	b.digitalWrite(CUT_OFF, b.HIGH);
+	
+	//release interval
+	clearInterval(timer);
+	
+	//turn off the led
+	b.digitalWrite(STARTLED, b.LOW);
 }
 
 function delay(ms)
@@ -136,13 +154,20 @@ function delay(ms)
 function recv1()
 {
 	RECV1_TIME = new Date().getTime();
-	b.digitalWrite(INHIBIT1, b.HIGH);
+	d1 = (RECV1_TIME - START_TIME);
+	b.digitalWrite(INHIBIT1, b.HIGH);					//turn off the receiver
+	delay(PLUSE * 2);
+	b.digitalWrite(INHIBIT1, b.LOW);					//wait and turn on again
 }
 
 function recv2()
 {
 	RECV2_TIME = new Date().getTime();
+	d2 = (RECV2_TIME - START_TIME);
 	b.digitalWrite(INHIBIT2, b.HIGH);
+	delay(PLUSE * 2);
+	b.digitalWrite(INHIBIT2, b.LOW);
+	
 }
 
 function setGain(gainNo)
@@ -246,5 +271,21 @@ function setGain(gainNo)
 			b.digitalWrite(GD,b.HIGH);
 			break;
 		}  
+	}
+}
+
+function timerIsr()
+{
+	GA_NO ++;
+	if(GA_NO < 11)
+	{
+		setInterval(timerIsr, GainTime[GA_NO]);
+		setGain(GA_NO);
+	}
+	else
+	{
+		clearInterval(timerIsr);
+		RECV1_TIME = TIMEOUT;
+		RECV2_TIME = TIMEOUT;
 	}
 }
