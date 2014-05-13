@@ -4,29 +4,34 @@ var sysTime;
 var INITLED = "USR0";
 var STARTLED = "USR1";
 
+//var for init
+var isInit;
+
 //var for send
-var ULTRASONIC_OUTPUT = "P8_4";			//send port
-var CUT_OFF = "P3_6";					//cut port: voltage must same as the vcc
+var ULTRASONIC_OUTPUT = "P8_11";    		//send port，io checked, function checked
+var CUT_OFF = "P8_13";					    //cut port: voltage must same as the vcc, io checked, function checked
 var PLUSE = 5;
 var timer;
 
 
 //var for receive
-var GA = "";
-var GB = "";
-var GC = "";
-var GD = "";
-var INHIBIT1 = "";						//set low to receive signal
-var INHIBIT2 = "";
-var SIG1 = "";
-var SIG2 = "";
+var GA = "P8_8";                            //io checked
+var GB = "P8_10";                           //io checked
+var GC = "P8_12";                          //io checked
+var GD = "P8_14";                           //io checked
+var INHIBIT1 = "P8_16";						//set low to receive signal, io checked
+var INHIBIT2 = "P8_18";                     //io checked
+var SIG1 = "P8_15";                         //io checked                 
+var SIG2 = "P8_17";                         //io checked
 var GA_NO = 0;
-var GainTime[11] = {2380,2740,2750,2740,2740,2740,2750,2740,5490,5480,5490};
+var GainTime = [2380,2740,2750,2740,2740,2740,2750,2740,5490,5480,5490];
 
 //var for start button
-var START = "";
-var boolean isStart = false;
-var workTimer;
+var START = "P8_15";                        //start buttion, io checked, function checked
+var isStart;
+var counter = 0;
+var counterValue = 1;
+var keyTimer;
 
 //var time
 var START_TIME = 0;
@@ -37,25 +42,32 @@ var TIMEOUT = 20;
 
 //setInterval(init, 1000);
 
+init();
+
+
 function init()
 {
+    console.log("init");
+    
+    //init the state
+    isInit = false;
+    
+    //init timer
+    timer = null;
+    
     //light up the led 0
     b.pinMode(INITLED, b.OUTPUT);
     b.digitalWrite(INITLED, b.HIGH);
 	
-	//set start button
-	b.pinMode(START, b.INPUT);
-	b.attachInterrupt(START, true, b.RISING, startWork);
-	b.attachInterrupt(START, true, b.FALLING, finishWork);
 	
 	//set start led
 	b.pinMode(STARTLED, b.OUTPUT);
-    b.digitalWrite(STARTED, b.LOW);
+    b.digitalWrite(STARTLED, b.LOW);
 	
 	//init the send port and cut port
 	b.pinMode(ULTRASONIC_OUTPUT, b.OUTPUT);
 	b.digitalWrite(ULTRASONIC_OUTPUT, b.LOW);
-	b.pinMode(CUT_OFF, OUTPUT);
+	b.pinMode(CUT_OFF, b.OUTPUT);
 	b.digitalWrite(CUT_OFF, b.HIGH);
 	
 	//init the receive ports and interrupt
@@ -69,9 +81,20 @@ function init()
 	b.pinMode(INHIBIT2, b.OUTPUT);
 	b.digitalWrite(INHIBIT2, b.HIGH);
 	
+    //set start button
+    b.pinMode(START, b.INPUT);
+	b.attachInterrupt(START, true, b.CHANGE, pushStart);
+    //b.attachInterrupt(START, true, b.RISING, startWork);
+	//b.attachInterrupt(START, true, b.FALLING, finishWork);
+    
+    //set up receiver
 	b.attachInterrupt(SIG1, true, b.FALLING, recv1);
 	b.attachInterrupt(SIG2, true, b.FALLING, recv2);
-	
+    
+    //delay(2000);
+    console.log("init done\n");
+	//setTimeout(restore("hhhh"), 100);
+    isInit = true;
     
 }
 
@@ -79,7 +102,7 @@ function send()
 {
 	b.digitalWrite(CUT_OFF, b.HIGH);
 	
-	int i = 0;
+	var i = 0;
 	for(; i < PLUSE; i ++)
 	{
 		b.digitalWrite(ULTRASONIC_OUTPUT,b.HIGH);
@@ -104,10 +127,14 @@ function receive()										//the version for short distance
 
 function startWork()
 {
+    //an function is working
+    if(timer != null)
+        return;
+    
 	//init vars
 	RECV1_TIME = 0;
 	RECV2_TIME = 0;
-	START_TIME = new Date.getTime();
+	START_TIME = new Date().getTime();
 	
 	//turn on the led
 	b.digitalWrite(STARTLED, b.HIGH);
@@ -117,6 +144,8 @@ function startWork()
 	
 	//enable send
 	timer = setInterval(send, PLUSE * 2);
+    
+    console.log("startWork!");
 	
 }
 
@@ -135,10 +164,15 @@ function finishWork()
 	b.digitalWrite(CUT_OFF, b.HIGH);
 	
 	//release interval
+    console.log("finishWork:", timer);
 	clearInterval(timer);
+    timer = null;
+    console.log("finishWork:", timer);
 	
 	//turn off the led
 	b.digitalWrite(STARTLED, b.LOW);
+    
+    console.log("finishWork!");
 }
 
 function delay(ms)
@@ -146,28 +180,67 @@ function delay(ms)
 	var start = new Date().getTime();
 	while(true)
 	{
-		if((new Date().getTime() - start) > n)
+		if((new Date().getTime() - start) > ms)
 			break;
 	}
 }
 
+
 function recv1()
 {
 	RECV1_TIME = new Date().getTime();
-	d1 = (RECV1_TIME - START_TIME);
+	var d1 = (RECV1_TIME - START_TIME);
 	b.digitalWrite(INHIBIT1, b.HIGH);					//turn off the receiver
 	delay(PLUSE * 2);
 	b.digitalWrite(INHIBIT1, b.LOW);					//wait and turn on again
+    
+    console.log("recv1", d1);
 }
 
 function recv2()
 {
 	RECV2_TIME = new Date().getTime();
-	d2 = (RECV2_TIME - START_TIME);
+	var d2 = (RECV2_TIME - START_TIME);
 	b.digitalWrite(INHIBIT2, b.HIGH);
 	delay(PLUSE * 2);
 	b.digitalWrite(INHIBIT2, b.LOW);
+    
+    console.log("recv2", d2);
 	
+}
+
+
+
+function pushStart()
+{
+    //isStart = ! isStart;
+    //keyTimer = setInterval(startFunction, 1);
+    if(isInit == false)
+        return;
+    delay(counterValue);
+    b.digitalRead(START, checkKey);
+    
+}
+
+
+function checkKey(x)
+{
+    console.log("checkKey:", x.value);
+    
+    if(x.value == 1)
+    {
+        isStart = true;
+        //counter = 0;
+        startWork();
+        //clearInterval(keyTimer);
+    }
+    else if(x.value == 0)
+    {
+        isStart = false;
+        //counter = 0;
+        finishWork();
+        //clearInterval(keyTimer);
+    }
 }
 
 function setGain(gainNo)
@@ -288,4 +361,23 @@ function timerIsr()
 		RECV1_TIME = TIMEOUT;
 		RECV2_TIME = TIMEOUT;
 	}
+}
+
+function restore(x)
+{
+    
+    console.log(x);
+    
+    b.detachInterrupt(SIG1);
+    b.detachInterrupt(SIG2);
+    b.detachInterrupt(START);
+    b.digitalWrite(INITLED, b.LOW);
+    b.digitalWrite(STARTLED, b.LOW);
+    
+    if(timer != null)
+    {
+        clearInterval(timer);
+    }
+    
+    console.log("system shutdown\n");
 }
