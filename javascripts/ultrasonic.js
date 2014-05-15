@@ -27,7 +27,7 @@ var GA_NO = 0;
 var GainTime = [2380,2740,2750,2740,2740,2740,2750,2740,5490,5480,5490];
 
 //var for start button
-var START = "P8_15";                        //start buttion, io checked, function checked
+var START = "P8_19";                        //start buttion, io checked, function checked
 var isStart;
 var counter = 0;
 var counterValue = 1;
@@ -88,7 +88,9 @@ function init()
 	//b.attachInterrupt(START, true, b.FALLING, finishWork);
     
     //set up receiver
+    b.pinMode(SIG1, b.INPUT);
 	b.attachInterrupt(SIG1, true, b.FALLING, recv1);
+    b.pinMode(SIG2, b.INPUT);
 	b.attachInterrupt(SIG2, true, b.FALLING, recv2);
     
     //delay(2000);
@@ -105,8 +107,12 @@ function send()
 	var i = 0;
 	for(; i < PLUSE; i ++)
 	{
+		
+		//40KHz
+		//12.5us high, 12.5us low
+		
 		b.digitalWrite(ULTRASONIC_OUTPUT,b.HIGH);
-		delay(1);                     					//need to be tested here!!!
+		delay(1);                     					//need to be tested here!!!/
 		b.digitalWrite(ULTRASONIC_OUTPUT,b.LOW);
 		delay(1);
 	}
@@ -193,6 +199,9 @@ var recv_d_1,
 
 function recv1()
 {
+    if(!(isInit || isStart))                            //get rid of impossible signal
+        return;
+    
 	RECV1_TIME = new Date().getTime();
 	var d1 = (RECV1_TIME - START_TIME);
 	b.digitalWrite(INHIBIT1, b.HIGH);					//turn off the receiver
@@ -210,6 +219,9 @@ function recv1()
 
 function recv2()
 {
+    if(!(isInit || isStart))
+        return;
+        
 	RECV2_TIME = new Date().getTime();
 	var d2 = (RECV2_TIME - START_TIME);
 	b.digitalWrite(INHIBIT2, b.HIGH);
