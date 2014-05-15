@@ -185,6 +185,11 @@ function delay(ms)
 	}
 }
 
+//@huxueyang
+var recv_d_1,
+	recv_d_2,
+	recv_tag_1 = false,
+	recv_tag_2 = false;
 
 function recv1()
 {
@@ -195,6 +200,12 @@ function recv1()
 	b.digitalWrite(INHIBIT1, b.LOW);					//wait and turn on again
     
     console.log("recv1", d1);
+
+    if(recv_tag_1 == true){
+    	return; 
+    }
+    recv_tag_1 = true;
+    recv_d_1 = d1;
 }
 
 function recv2()
@@ -207,6 +218,12 @@ function recv2()
     
     console.log("recv2", d2);
 	
+    if(recv_tag_2 == true){
+    	return; 
+    }
+    recv_tag_2 = true;
+    recv_d_2 = d2;
+
 }
 
 
@@ -232,6 +249,9 @@ function checkKey(x)
         isStart = true;
         //counter = 0;
         startWork();
+      
+      	// function at front end @huxueyang
+       	onPenDown();
         //clearInterval(keyTimer);
     }
     else if(x.value == 0)
@@ -239,6 +259,9 @@ function checkKey(x)
         isStart = false;
         //counter = 0;
         finishWork();
+
+        // function at front end @huxueyang
+       	onPenUp();
         //clearInterval(keyTimer);
     }
 }
