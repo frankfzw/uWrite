@@ -7,6 +7,7 @@ function isTriangle(a,b,c){
 	}
 	return true
 }
+
 function transPoint(t1,t2){
 	var d1 = t1 * vspeed;
 	var d2 = t2 * vspeed;
@@ -22,7 +23,8 @@ function transPoint(t1,t2){
 }
 
 function smooth(array){
-	float scale = 0.6;
+
+	var scale = 0.6;
 	var length = array.length;
 	if(length <3)
 		return array;
@@ -43,14 +45,15 @@ function smooth(array){
 		//var nexti = (i + 1) % length;  
         var backi = (i + length - 1) % length;  
 		var midinmid = {};
-		midinmid.x = (midpoints[i].x + midpoints[backi].x)/2.0; 
-		midinmid.y = (midpoints[i].y + midpoints[backi].y)/2.0;
+
+		midinmid.x = (midArray[i].x + midArray[backi].x)/2.0; 
+		midinmid.y = (midArray[i].y + midArray[backi].y)/2.0;
 		 var offsetx = originPoint[i].x - midinmid.x;  
          var offsety = originPoint[i].y - midinmid.y;  
         
 		 var extrapoint = {};
-		 extrapoint.x = midpoints[backi].x + offsetx;  
-         extrapoint.y = midpoints[backi].y + offsety; 
+		 extrapoint.x = midArray[backi].x + offsetx;  
+         extrapoint.y = midArray[backi].y + offsety; 
 		 
          //朝 originPoint[i]方向收缩   
          var addx = (extrapoint.x - originPoint[i].x) * scale;  
@@ -60,8 +63,8 @@ function smooth(array){
          extraArray.push(extrapoint); 
           
 		  
-         extrapoint.x = midpoints[i].x + offsetx;  
-         extrapoint.y = midpoints[i].y + offsety;  
+         extrapoint.x = midArray[i].x + offsetx;  
+         extrapoint.y = midArray[i].y + offsety;  
          addx = (extrapoint.x - originPoint[i].x) * scale;  
          addy = (extrapoint.y - originPoint[i].y) * scale;  
          extrapoint.x = originPoint[i].x + addx;  
@@ -83,7 +86,7 @@ function smooth(array){
 			  var point = bezier3funcX(u,controlPoint);  
              // var py = bezier3funcY(u,controlPoint);  
               //u的步长决定曲线的疏密  
-              u -= 0.005;  
+              u -= 0.1;  
               //var tempP = {x:px,y:py};  
               //存入曲线点   
               curvePoint.push(point);  
@@ -93,10 +96,10 @@ function smooth(array){
 }
 
 function bezier3funcX(uu,controlP){
-	float part0 = controlP[0].x * uu * uu * uu;  
-	float part1 = 3 * controlP[1].x * uu * uu * (1 - uu);  
-	float part2 = 3 * controlP[2].x * uu * (1 - uu) * (1 - uu);  
-	float part3 = controlP[3].x * (1 - uu) * (1 - uu) * (1 - uu);   
+	var part0 = controlP[0].x * uu * uu * uu;  
+	var part1 = 3 * controlP[1].x * uu * uu * (1 - uu);  
+	var part2 = 3 * controlP[2].x * uu * (1 - uu) * (1 - uu);  
+	var part3 = controlP[3].x * (1 - uu) * (1 - uu) * (1 - uu);   
 	var xx= part0 + part1 + part2 + part3;
 	part0 = controlP[0].x * uu * uu * uu;  
 	part1 = 3 * controlP[1].y * uu * uu * (1 - uu);  
