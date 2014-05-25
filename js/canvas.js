@@ -111,6 +111,7 @@ function getPenPosition(){
 function draw_from_file(){
 
 	var data_str = window.sessionStorage.getItem("upload_canvas_data");
+	//console.log(data_str);
 	var data;
 	try{
 		data = JSON.parse(data_str);
@@ -122,14 +123,15 @@ function draw_from_file(){
 
 
 	// debug, should be deleted!
-	var is_smooth = false;
-	if(confirm("smooth?")){
-		is_smooth = true;
-	}
+	//var is_smooth = false;
+	//if(confirm("smooth?")){
+	//	is_smooth = true;
+	//}
 
 	//console.log("string data: "+JSON.stringify(data));
-	if(clearCanvas()){
-
+	//if(clearCanvas()){
+	context.clearRect(0,0,canvas.width,canvas.height);
+	note = new Note();
 		//for(line in data.lines){
 		for (var i = 0; i < data.lines.length; i++) {
 			var line = data.lines[i];
@@ -140,15 +142,15 @@ function draw_from_file(){
 
 			// call smooth function from calculate.js
 			var smooth_line = smooth(line.points);
-			console.log(smooth_line);
-
+			//console.log(smooth_line);
+			
 			// debug, should be deleted!
 			var points;
-			if(is_smooth){
+			//if(is_smooth){
 				points = smooth_line;
-			}else{
-				points = line.points;
-			}
+			//}else{
+			//	points = line.points;
+			//}
 
 			var start_pos = points[0];
 			for (var k = 0; k < points.length; k++) {
@@ -165,7 +167,7 @@ function draw_from_file(){
 				start_pos = point;
 			}
 		}
-	}
+	//}
 
 }
 

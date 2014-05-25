@@ -1,5 +1,6 @@
 var d = 100.0;  // distance between two receivers
 var vspeed = 340.0; // voice speed
+var scale = 0.6;
 function isTriangle(a,b,c){
 	if(a + b < c || a+c < b || b+c <a){
 		console.log("It is not a triangle. Something wrong.");
@@ -24,7 +25,7 @@ function transPoint(t1,t2){
 
 function smooth(array){
 
-	var scale = 0.6;
+	
 	var length = array.length;
 	if(length <3)
 		return array;
@@ -39,30 +40,33 @@ function smooth(array){
 		midpoint.y = (array[i].y + array[nexti].y)/2.0;
 		midArray.push(midpoint);
 	}
+	console.log(midArray)
 	//平移中点
 	var extraArray = [];
 	for(var i = 0; i< length;i++){
-		//var nexti = (i + 1) % length;  
+		var nexti = (i + 1) % length;  
         var backi = (i + length - 1) % length;  
 		var midinmid = {};
 
 		midinmid.x = (midArray[i].x + midArray[backi].x)/2.0; 
 		midinmid.y = (midArray[i].y + midArray[backi].y)/2.0;
+		
 		 var offsetx = originPoint[i].x - midinmid.x;  
          var offsety = originPoint[i].y - midinmid.y;  
         
 		 var extrapoint = {};
 		 extrapoint.x = midArray[backi].x + offsetx;  
          extrapoint.y = midArray[backi].y + offsety; 
-		 
+		 //console.log(extrapoint);
          //朝 originPoint[i]方向收缩   
          var addx = (extrapoint.x - originPoint[i].x) * scale;  
          var addy = (extrapoint.y - originPoint[i].y) * scale;  
          extrapoint.x = originPoint[i].x + addx;  
          extrapoint.y = originPoint[i].y + addy;  
+		// console.log(extrapoint);
          extraArray.push(extrapoint); 
           
-		  
+		 var extrapoint={}; 
          extrapoint.x = midArray[i].x + offsetx;  
          extrapoint.y = midArray[i].y + offsety;  
          addx = (extrapoint.x - originPoint[i].x) * scale;  
@@ -72,14 +76,16 @@ function smooth(array){
          extraArray.push(extrapoint); 
            
 	}
+	console.log(extraArray);
 	
 	for(var i = 0;i< length-1;i++)
 	{
 		var controlPoint=[];
+		
 		controlPoint.push(originPoint[i]);
 		controlPoint.push(extraArray[2*i+1]);
-		controlPoint.push(extraArray[2*i+2]);
-		controlPoint.push(originPoint[i+1]);
+		controlPoint.push(extraArray[(2*i+2)%(2*length)]);
+		controlPoint.push(originPoint[(i+1)%length]);
 		var u=1;
 		while(u>=0){
 		
@@ -101,7 +107,7 @@ function bezier3funcX(uu,controlP){
 	var part2 = 3 * controlP[2].x * uu * (1 - uu) * (1 - uu);  
 	var part3 = controlP[3].x * (1 - uu) * (1 - uu) * (1 - uu);   
 	var xx= part0 + part1 + part2 + part3;
-	part0 = controlP[0].x * uu * uu * uu;  
+	part0 = controlP[0].y * uu * uu * uu;  
 	part1 = 3 * controlP[1].y * uu * uu * (1 - uu);  
 	part2 = 3 * controlP[2].y * uu * (1 - uu) * (1 - uu);  
 	part3 = controlP[3].y * (1 - uu) * (1 - uu) * (1 - uu);   
