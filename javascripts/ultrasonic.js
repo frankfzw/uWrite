@@ -8,9 +8,9 @@ var STARTLED = "USR1";
 var isInit;
 
 //var for send
-var ULTRASONIC_OUTPUT = "P8_11";    		//send port，io checked, function checked
+var ULTRASONIC_OUTPUT = "P8_11";            //send port，io checked, function checked
 var CUT_OFF = "P8_13";					    //cut port: voltage must same as the vcc, io checked, function checked
-var PLUSE = 5;
+var PLUSE = 100;
 var timer;
 
 
@@ -43,6 +43,8 @@ var TIMEOUT = 20;
 //setInterval(init, 1000);
 
 init();
+//delay(10000);
+//test();
 
 
 function init()
@@ -98,26 +100,40 @@ function init()
 	//setTimeout(restore("hhhh"), 100);
     isInit = true;
     
+    
+}
+
+
+function test()
+{
+    console.log("test");
+    delay(10000);
+    isStart = true;
+    send();
 }
 
 function send()
 {
 	b.digitalWrite(CUT_OFF, b.HIGH);
 	
-	var i = 0;
-	for(; i < PLUSE; i ++)
-	{
+    START_TIME = new Date().getTime();;
+    
+	//var i = 0;
+	//for(; i < PLUSE; i ++)
+	//{
 		
 		//40KHz
 		//12.5us high, 12.5us low
 		
 		b.digitalWrite(ULTRASONIC_OUTPUT,b.HIGH);
-		delay(1);                     					//need to be tested here!!!/
+		//delay(1);                     					//need to be tested here!!!/
 		b.digitalWrite(ULTRASONIC_OUTPUT,b.LOW);
-		delay(1);
-	}
+		//delay(1);
+	//}
 	
-	b.digitalWrite(CUT_OFF, b.LOW);
+	//b.digitalWrite(ULTRASONIC_OUTPUT, b.LOW);
+    //delay(1000);
+    console.log("send!!!!!!");
 }
 
 function receive()										//the version for short distance
@@ -149,7 +165,8 @@ function startWork()
 	receive();
 	
 	//enable send
-	timer = setInterval(send, PLUSE * 2);
+	timer = setInterval(send, PLUSE);
+    //send();
     
     console.log("startWork!");
 	
@@ -199,13 +216,13 @@ var recv_d_1,
 
 function recv1()
 {
-    if(!(isInit || isStart))                            //get rid of impossible signal
+    if(!(isInit && isStart))                            //get rid of impossible signal
         return;
     
 	RECV1_TIME = new Date().getTime();
 	var d1 = (RECV1_TIME - START_TIME);
 	b.digitalWrite(INHIBIT1, b.HIGH);					//turn off the receiver
-	delay(PLUSE * 2);
+	delay(PLUSE);
 	b.digitalWrite(INHIBIT1, b.LOW);					//wait and turn on again
     
     console.log("recv1", d1);
@@ -219,7 +236,7 @@ function recv1()
 
 function recv2()
 {
-    if(!(isInit || isStart))
+    if(!(isInit && isStart))
         return;
         
 	RECV2_TIME = new Date().getTime();
@@ -263,7 +280,7 @@ function checkKey(x)
         startWork();
       
       	// function at front end @huxueyang
-       	onPenDown();
+       	//onPenDown();
         //clearInterval(keyTimer);
     }
     else if(x.value == 0)
@@ -273,7 +290,7 @@ function checkKey(x)
         finishWork();
 
         // function at front end @huxueyang
-       	onPenUp();
+       	//onPenUp();
         //clearInterval(keyTimer);
     }
 }
