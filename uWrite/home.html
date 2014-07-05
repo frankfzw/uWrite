@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  	<meta charset="utf-8">
+  	<title>UltraSound Writer! </title>
+	
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+
+  
+  	<script type="text/javascript" src="js/jquery.min.js"></script>
+	<script type="text/javascript" src="js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="js/socket.io.js"></script>
+	
+	<script type="text/javascript" src="js/calculate.js"></script>
+	<script type="text/javascript" src="js/canvas.js"></script>
+	<script type="text/javascript" src="js/updownload.js"></script>
+	<script type="text/javascript" src="js/init.js"></script>
+	 <script type="text/javascript" src="js/bonescript.js"></script>
+   <script type="text/javascript" src="js/readfile.js"></script>
+	<style>
+	.eui_slider{ background:#c6c6c6; position:relative; width:12px; height:12px; overflow:hidden; }
+.eui_slider .sd_complete{ width:100%; height:100%; position:absolute; z-index:1; background:#2d89ef; }
+.eui_slider:hover .sd_complete{ background:#439bfd; }
+.eui_slider .sd_thumb{ width:12px; height:12px; position:absolute; z-index:2; overflow:hidden; background:#1a1a1a; cursor:pointer; outline:none; }
+	
+
+	</style>
+
+</head>
+
+<!-- snowson -->
+<body onload="setTimeout(init,1000);">
+<!-- <body> -->	
+
+<div class="container">
+	<!--<div class="row clearfix">
+		<div >
+			<div class="btn-group  ">
+				 <button class="btn btn-default" type="button" onclick="init();">
+				 	<em class="glyphicon glyphicon-align-left"></em> Start Record</button>
+				 <button class="btn btn-default" type="button" onclick="restore(1);">
+				 	<em class="glyphicon glyphicon-align-center"></em> End Record</button>
+				
+				 
+			</div>
+
+
+		</div>
+	</div>-->
+	<div class="row">
+		<div class="wrapper " >
+				<div style="float:left">平滑系数</div>
+				<div class="eui_slider eui_slider_x" style="margin-left:100px;margin-top:5px;margin-right:100px;float:left" id="slider">
+					<div class="sd_complete"></div>
+					<div class="sd_thumb"></div>
+				</div>
+				
+				<div id="demoText" style="float:left" class="demoText">0.6</div>
+		</div>
+	</div>
+	
+	<div class="row clearfix">
+		<div class="">
+			<div id="canvas_wrap">
+				<!-- snowson -->
+				
+				<canvas id="canvas" width="1200" height="600" style="border:1px solid #000000;">
+					Your browser does not support the HTML5 canvas tag.
+				</canvas>
+
+			</div>
+			
+		</div>
+
+  </div>
+  <div class="row clearfix">
+		<div >
+			<!--<button  type="button" class="btn btn-lg btn-success">Color Picker</button>-->
+            <button id="start_button" type="button" class="btn btn-lg btn-success" onclick="start_send();">Start</button>
+            <button id="start_button" type="button" class="btn btn-lg btn-success" onclick="stop_send();">Stop</button>
+			<button id="clear_canvas_button" type="button" class="btn btn-lg btn-success" onclick="clearCanvas();">Clear</button>
+
+			<input id="upload_button"  type="file">
+			<button id="draw_from_file_button">Draw From File</button>
+
+			<a id="download_button" download="test.json" href="">download</a>
+			
+			
+			<!--slider-->
+			 <input id="distance" />
+				 <button class="btn btn-default" onclick="set_distance()">set d </button>
+
+		</div>
+	</div>
+</div>
+<div id="test_area">
+
+</div>
+
+<script type="text/javascript" src="js/easy.js"></script>
+<script type="text/javascript">
+var myVar;
+function start_send(){
+    window.external.Start();
+    var i = 0;
+    //for(; i < 5; i ++)
+       
+    //alert("Start Writing!");
+    //window.external.PollData();
+    myVar = setInterval(function(){ window.external.PollData();}, 1000);
+    
+}
+function stop_send(){
+    window.external.Stop();
+    //alert("Stop Writing!");
+    clearInterval(myVar);
+}
+
+var isDrawing = false;
+var isWorking = false;
+var allPoints = [];
+var allPointsNew = [];
+function appendData(d1,d2){
+
+    /*
+    if(!isWorking)
+        isWorking = true;
+    else
+        return;
+    */
+    // is drawing now?
+     //$("#test_area").append("<p>"+JSON.stringify(d1)+"&nbsp"+ JSON.stringify(d2)+"</p><br/>");
+    //var dd1 = d1.substr(1,d1.length-1);
+    //var dd2 = d2.substr(1,d2.length-1);
+    var d1Array = JSON.stringify(d1).split("#");
+    var d2Array = JSON.stringify(d2).split("#");
+    
+   // $("#test_area").append("<p>Array length = "+d1Array.length+"</p><br/>");
+    //$("#test_area").append("<p>before "+d1Array+"&nbsp"+ d2Array+"</p><br/>");
+    d1Array[0]=d1Array[0].substr(1,d1Array[0].length-1);
+    d2Array[0]=d2Array[0].substr(1,d2Array[0].length-1);
+    //$("#test_area").append("<p>after "+d1Array+"&nbsp"+ d2Array+"</p><br/>");
+    for(var i =0; i<d1Array.length-1;i++){
+        var temp1 = parseInt(d1Array[i]);
+        var temp2 = parseInt(d2Array[i]);
+        // $("#test_area").append("<p>"+temp1 + temp2+" </p>");
+        if(isDrawing == true){
+           // $("#test_area").append("<p> drawing = "+temp1+"&nbsp"+temp2+"</p>");
+            // stop 
+            if( temp1 == -1 || temp2 == -1){
+                //$("#test_area").append("<p> pen up = "+temp1+"&nbsp"+temp2+"</p>");
+                //alert(1);
+                isDrawing = false;     
+                allPoints = deleteAbnormal(allPoints);
+               // alert(1);
+                flushCanvas(allPoints);
+            }else{
+                var p = {};              
+                 //$("#test_area").append("<p> aaaaaaaaaaa</p>");
+                p = transPoint(temp1,temp2);
+                if (p !== null) {
+                    //$("#test_area").append("<p> drawing2 = "+p.x+"&nbsp"+p.y+"</p>");
+                    //$("#test_area").append("<p> drawing2 origin = "+temp1+"&nbsp"+temp2+"</p>");
+                    drawOnCanvas(p);
+                    if(allPoints.length!=0)
+                        allPoints[allPoints.length-1].push(p);
+                }
+                else {
+                    //$("#test_area").append("<p> drawing2 null </p>");
+                }
+                
+            }
+           // ("#test_area").append("<p>aaaa:"+temp1+"&nbsp&nbsp"+temp2+" </p><br/>");
+            // drawing
+           
+        }
+        
+        if( isDrawing == false){
+            //$("#test_area").append("<p> d1 = "+temp1+"&nbsp&nbsp d2 = "+temp2+"</p>");
+            if( temp1 != -1 && temp1 <8000 && temp2 <8000){
+                // start drawing
+             //   $("#test_area").append("<p>strat drawing</p><br/>");
+                isDrawing = true;
+                var startPoint ={}
+                startPoint = transPoint(temp1,temp2);
+                if(startPoint != null){
+                    onStartDraw(startPoint);
+                }
+                var a = new Array();
+                allPoints.push(a);
+            }
+           // ("#test_area").append("<p>"+temp1+"&nbsp&nbsp"+temp2+" </p><br/>");
+            
+        }
+    
+    }
+    
+    
+   // $("#test_area").append("<p>"+point.x+"&nbsp&nbsp"+point.y+" </p><br/>");
+  // $("#test_area").append("<p>aaaaabbbaa</p><br/>");
+   //isWorking = false;
+}
+
+E.config({
+    baseUrl : './js/'
+});
+
+E.use( 'slider', function(){
+
+    var slider = new E.ui.Slider( '#slider', {
+        min : 0,
+        max : 100,
+        axis : 'x',
+		value:60
+    });
+    
+    var demoText = E( '#demoText' );
+    
+    slider.on( 'slide', function( e ){
+            demoText.text( this.value/100.0 );
+			scale= this.value/100.0;
+			flushCanvas(allPoints);
+        });
+        
+    
+});
+</script>
+
+</body>
+</html>
